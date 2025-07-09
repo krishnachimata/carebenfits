@@ -1,0 +1,30 @@
+@isTest
+private class CareBenefitVerificationAPITest {
+    @isTest static void testReceiveCallback() {
+        // Insert a dummy CareBenefitVerifyRequest__c
+        CareBenefitVerifyRequest__c req = new CareBenefitVerifyRequest__c(
+            External_Request_ID__c = 'EXTERNAL123',
+            Status__c = 'Acknowledged'
+        );
+        insert req;
+
+        // Build a simulated callback
+        String callbackJSON = '{"status": "Acknowledged", "statusReason": "Verified"}';
+
+        // Simulate REST context
+        RestRequest restReq = new RestRequest();
+        restReq.requestBody = Blob.valueOf(callbackJSON);
+        RestContext.request = restReq;
+        RestContext.response = new RestResponse();
+
+        // Invoke REST API logic directly
+        Test.startTest();
+        CareBenefitVerificationAPI.receiveCallback();
+        Test.stopTest();
+
+        // Check if coverage benefit was created
+        List<CoverageBenefit__c> benefits = [SELECT Id, Status__c FROM CoverageBenefit__c];
+        System.assert(!benefits.isEmpty(), 'Coverage Benefit should be created');
+        System.assertEquals('Acknowledged', benefits[0].Status__c);
+    }
+}
