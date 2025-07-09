@@ -1,0 +1,36 @@
+public class CareBenefitRequestWrapper {
+    
+    public class Patient {
+        
+        public String firstName;
+        public String lastName;
+        public Date dateOfBirth;
+        public String gender;
+    }
+
+    public class Insurance {
+        public String providerName;
+        public String policyNumber;
+        public String groupNumber;
+        public String subscriberId;
+    }
+
+    public class Provider {
+        public String npi;
+        public String firstName;
+        public String lastName;
+    }
+
+    public class Service {
+        public String serviceType;
+        public Date serviceDate;
+        public String diagnosisCode;
+        public String procedureCode;	
+    }
+
+    public Patient patient;
+    public Insurance insurance;
+    public Provider provider;
+    public Service service;
+    public string referenceId;
+}
