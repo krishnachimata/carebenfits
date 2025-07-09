@@ -1,0 +1,29 @@
+trigger CBVRTrigger on CareBenefitVerifyRequest__c (before update) {
+    for (CareBenefitVerifyRequest__c cbvr : Trigger.new) {
+        Set<Id> userIds = new Set<Id>();
+    for (CareBenefitVerifyRequest__c req : Trigger.new) {
+        CareBenefitVerifyRequest__c old = Trigger.oldMap.get(req.Id);
+
+        // Detect if ownership has changed from Queue to User
+        if (req.OwnerId != old.OwnerId) {
+            userIds.add(req.OwnerId);
+        }
+    }
+
+    // Get User names
+    Map<Id, User> userMap = new Map<Id, User>(
+        [SELECT Id, Name FROM User WHERE Id IN :userIds]
+    );
+
+    for (CareBenefitVerifyRequest__c req : Trigger.new) {
+        CareBenefitVerifyRequest__c old = Trigger.oldMap.get(req.Id);
+        if (req.OwnerId != old.OwnerId && userMap.containsKey(req.OwnerId)) {
+            req.Care_Representative_Name__c = userMap.get(req.OwnerId).Name;
+
+            // ✅ Optional: Kick off external API call
+            // CareBenefitService.sendRequest(req); (if logic should happen here)
+        }
+    }
+        
+}
+}
