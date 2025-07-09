@@ -1,0 +1,56 @@
+@RestResource(urlMapping='/care-benefit-verification-results')
+global with sharing class CareBenefitVerificationAPI {
+
+    @HttpPost
+    global static void receiveCallback() {
+        RestRequest req = RestContext.request;
+        String body = req.requestBody.toString();
+
+        // Log body for debug
+        System.debug('Received Callback: ' + body);
+
+        // Parse JSON
+        Map<String, Object> payload = (Map<String, Object>) JSON.deserializeUntyped(body);
+        String externalId = (String) payload.get('externalId');
+        String status = (String) payload.get('status');
+        String statusReason = (String) payload.get('statusReason');
+
+        if (String.isBlank(externalId)) {
+            throw new CalloutException('Missing externalId in callback payload');
+        }
+
+        // Query the CBVR record by external ID
+        List<CareBenefitVerifyRequest__c> cbvrList = [
+            SELECT Id, Status__c, Status_Reason__c
+            FROM CareBenefitVerifyRequest__c
+            WHERE External_Request_ID__c = :externalId
+            LIMIT 1
+        ];
+
+        if (cbvrList.isEmpty()) {
+            throw new CalloutException('No matching CBVR record found for externalId: ' + externalId);
+        }
+
+        CareBenefitVerifyRequest__c cbvr = cbvrList[0];
+
+        // Update the status and reason
+        cbvr.Status__c = status;
+        cbvr.Status_Reason__c = statusReason;
+
+        // Create the linked CoverageBenefit__c record
+        CoverageBenefit__c cb = new CoverageBenefit__c(
+            CareBenefitVerifyRequest__c = cbvr.Id,
+            Status__c = status,
+            Status_Reason__c = statusReason
+        );
+
+        try {
+            update cbvr;
+            insert cb;
+            System.debug('CBVR and CoverageBenefit__c updated/inserted successfully.');
+        } catch (Exception e) {
+            System.debug('Error in processing callback: ' + e.getMessage());
+            throw new CalloutException('Callback processing failed.');
+        }
+    }
+}
