@@ -1,0 +1,5 @@
+trigger CBVRTrigger1 on CareBenefitVerifyRequest__c (after insert) {
+     for (CareBenefitVerifyRequest__c cbvr : Trigger.new) {
+        CareBenefitService.sendRequest(cbvr);
+    }
+}
